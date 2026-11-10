@@ -1,6 +1,6 @@
 # Smart Video Highlight & GIF Generator
 
-An AI-powered local web app that automatically extracts the most **interesting moments** from any video based on **visual action detection** and **audio climax analysis**, producing a highlight reel (MP4/WebM) or animated GIF.
+An AI-powered local web app that automatically extracts the most **interesting moments** from any video based on **visual action detection** and **audio climax analysis**, producing a highlight reel (MP4/WebM) or animated GIF/WebP.
 
 **100% local processing** — no APIs, no GPU, no cloud required.
 
@@ -11,8 +11,9 @@ An AI-powered local web app that automatically extracts the most **interesting m
 - **Visual Interest Scoring**: Uses Farneback dense optical flow to detect motion intensity, and HSV histogram correlation to detect scene changes.
 - **Audio Interest Scoring**: Analyzes RMS energy (loudness), spectral centroid (brightness), and onset strength (transients) using librosa.
 - **Intelligent Fusion**: Combines visual and audio scores with user-adjustable weights and percentile-based thresholding.
-- **Multiple Output Formats**: Export as MP4 (H.264), WebM (VP8), or GIF.
-- **Social Media Ready**: Optional 9:16 vertical crop for Instagram Reels, TikTok, and YouTube Shorts.
+- **Memory Optimized**: Employs chunked processing (batches of 500 frames) to keep RAM usage constant, allowing long or HD videos to be processed smoothly on modest hardware (e.g., 8GB RAM).
+- **Multiple Output Formats**: Export as MP4 (H.264), WebM (VP8), WebP animation, or GIF.
+- **Social Media Ready**: Optional centered 9:16 vertical crop tailored for Instagram Reels, TikTok, and YouTube Shorts.
 - **Interactive Timeline**: Visualize the interest score timeline with highlight regions highlighted.
 - **Fully Configurable**: Adjust weights, thresholds, clip durations, and analysis precision via intuitive sliders.
 
@@ -26,7 +27,7 @@ An AI-powered local web app that automatically extracts the most **interesting m
 | Video I/O | OpenCV + MoviePy | Frame reading, editing, export |
 | Visual Analysis | OpenCV | Optical flow, histogram comparison |
 | Audio Analysis | librosa | RMS, spectral centroid, onset strength |
-| Signal Processing | SciPy | Peak detection |
+| Signal Processing & Math | NumPy, SciPy | Matrix operations, normalization, peak detection |
 | Visualization | Matplotlib | Score timeline charts |
 
 ---
@@ -70,7 +71,7 @@ The app will open in your default browser at `http://localhost:8501`.
 
 ### Processing Pipeline
 
-```
+```text
 Upload Video → Sample Frames → Extract Audio
                     │                  │
             Optical Flow +      RMS Energy +
@@ -89,7 +90,7 @@ Upload Video → Sample Frames → Extract Audio
                     Segment Detection & Merging
                            │
                     Highlight Reel Export
-                    (MP4 / WebM / GIF)
+                 (MP4 / WebM / WebP / GIF)
 ```
 
 ### Key Algorithms
@@ -105,25 +106,7 @@ Upload Video → Sample Frames → Extract Audio
 
 4. **Percentile-Based Thresholding** — Adapts to each video's score distribution rather than using a fixed threshold. The 75th percentile selects the top 25% of moments.
 
----
-
-## Project Structure
-
-```
-├── app.py                        # Streamlit UI + pipeline orchestration
-├── core/
-│   ├── __init__.py               # Package exports
-│   ├── video_processor.py        # Frame sampling, audio extraction
-│   ├── visual_scorer.py          # Optical flow + histogram scoring
-│   ├── audio_scorer.py           # RMS + spectral + onset scoring
-│   ├── fusion.py                 # Score normalization, fusion, segment detection
-│   └── highlight_generator.py    # Subclip extraction, export (MP4/WebM/GIF)
-├── utils/
-│   ├── __init__.py               # Utility exports
-│   └── helpers.py                # Temp dir management, formatting
-├── requirements.txt              # Python dependencies
-└── README.md                     # This file
-```
+5. **Memory Optimization (Chunked Processing)** — To prevent Out of Memory errors without relying on a GPU, the video processor yields frames in sequential chunks of 500. Each chunk is processed and immediately released from memory via Python's Garbage Collection, ensuring constant RAM usage regardless of the video's total length.
 
 ---
 
@@ -142,8 +125,8 @@ Upload Video → Sample Frames → Extract Audio
 ## Limitations
 
 - **Memory**: Very long videos (>30 minutes) at high analysis FPS may use significant RAM. Lower the analysis FPS for long videos.
-- **GIF Size**: GIF output is inherently large. The app limits resolution to 480px width and 10 FPS.
-- **No GPU Acceleration**: All processing runs on CPU. A 5-minute video takes ~30-60 seconds to process.
+- **Animation Size**: WebP and GIF outputs are inherently large. The app limits resolution to 480px width and 10 FPS for these formats.
+- **No GPU Acceleration**: All processing runs on CPU. A 5-minute video takes ~30-60 seconds to process depending on your CPU.
 - **Single Audio Channel**: Stereo audio is mixed to mono for analysis.
 
 ---
